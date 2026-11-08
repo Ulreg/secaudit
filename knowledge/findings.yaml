@@ -1,0 +1,684 @@
+# Text for every finding key. cat=category, sev=severity when the test fails, ease=how easy it is to exploit (1-5).
+# t=title d=description x=how it can be exploited r=remediation. {placeholders} are filled from the finding's params.
+findings:
+  http_redirect:
+    cat: HTTPS
+    sev: High
+    ease: 4
+    ref: "RFC 6797, OWASP A02:2021"
+    cfg: "nginx: server { listen 80; return 301 https://$host$request_uri; }\nApache: Redirect permanent / https://example.com/"
+    en: {t: "HTTP redirects to HTTPS (or HTTP is closed)", d: "Visitors using http:// should be sent to https:// immediately, or plain HTTP should not be offered at all.", x: "A visitor who types the bare domain first speaks plain HTTP. An attacker on the same network (public Wi-Fi, rogue router) can intercept that request, read or change it and serve a fake copy of the site (SSL stripping), capturing logins.", r: "Redirect all port-80 traffic to https:// with a 301 and enable HSTS."}
+    da: {t: "HTTP sender videre til HTTPS (eller HTTP er lukket)", d: "Besøgende der bruger http:// bør sendes direkte til https://, eller også bør ukrypteret HTTP slet ikke tilbydes.", x: "Skriver en besøgende blot domænenavnet, starter forbindelsen ukrypteret. En angriber på samme netværk (offentligt wifi, falsk router) kan opfange anmodningen, læse eller ændre den og vise en falsk kopi af siden (SSL stripping) og dermed stjæle logins.", r: "Send al trafik på port 80 videre til https:// med en 301-omdirigering og aktivér HSTS."}
+  https_available:
+    cat: HTTPS
+    sev: High
+    ease: 4
+    ref: "OWASP A02:2021"
+    en: {t: "Site is served over HTTPS", d: "The site is delivered over an encrypted connection.", x: "Anyone on the network path (Wi-Fi, ISP, rogue router) can read and modify traffic, steal session cookies and inject malicious content.", r: "Install a certificate (for example Let's Encrypt) and serve the site on port 443."}
+    da: {t: "Siden leveres via HTTPS", d: "Siden leveres over en krypteret forbindelse.", x: "Alle på netværksvejen (wifi, internetudbyder, falsk router) kan læse og ændre trafikken, stjæle session-cookies og indsætte skadelig kode.", r: "Installér et certifikat (fx Let's Encrypt) og server siden på port 443."}
+  hsts_present:
+    cat: HTTPS
+    sev: Medium
+    ease: 3
+    ref: "RFC 6797"
+    cfg: "nginx: add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\nApache: Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains\""
+    en: {t: "HSTS header present", d: "HSTS tells browsers to use HTTPS only for this site.", x: "Without HSTS an attacker can strip HTTPS from a victim's first request (SSL stripping) or serve a fake certificate warning that users click through, and then capture credentials.", r: "Send the Strict-Transport-Security header on all HTTPS responses."}
+    da: {t: "HSTS-header er sat", d: "HSTS fortæller browseren, at siden kun må bruges over HTTPS.", x: "Uden HSTS kan en angriber fjerne HTTPS fra offerets første forespørgsel (SSL stripping) og derefter opsnappe logins i klartekst.", r: "Send headeren Strict-Transport-Security på alle HTTPS-svar."}
+  hsts_maxage:
+    cat: HTTPS
+    sev: Low
+    ease: 2
+    ref: "RFC 6797"
+    en: {t: "HSTS max-age is at least 1 year", d: "A short max-age shortens the protected period.", x: "When the policy expires the browser accepts plain HTTP again and SSL stripping works again for returning visitors.", r: "Set max-age=31536000 or higher."}
+    da: {t: "HSTS max-age er mindst 1 år", d: "En kort max-age forkorter beskyttelsesperioden.", x: "Når politikken udløber, accepterer browseren igen ukrypteret HTTP, og SSL stripping virker igen på tilbagevendende besøgende.", r: "Sæt max-age=31536000 eller højere."}
+  hsts_subdomains:
+    cat: HTTPS
+    sev: Low
+    ease: 2
+    ref: "RFC 6797"
+    en: {t: "HSTS includeSubDomains", d: "Extends HSTS protection to all subdomains.", x: "Cookies set for the parent domain can be captured or overwritten through an unprotected subdomain.", r: "Add includeSubDomains (only when all subdomains support HTTPS)."}
+    da: {t: "HSTS includeSubDomains", d: "Udvider HSTS-beskyttelsen til alle underdomæner.", x: "Cookies for hoveddomænet kan opsnappes eller overskrives via et ubeskyttet underdomæne.", r: "Tilføj includeSubDomains (kun hvis alle underdomæner understøtter HTTPS)."}
+  hsts_preload:
+    cat: HTTPS
+    sev: Low
+    ease: 2
+    ref: "https://hstspreload.org"
+    en: {t: "HSTS preload", d: "The domain is shipped inside browsers as HTTPS-only.", x: "The very first visit to the site is still open to SSL stripping without preload.", r: "Add the preload directive and submit the domain at hstspreload.org."}
+    da: {t: "HSTS preload", d: "Domænet er indbygget i browsere som kun-HTTPS.", x: "Allerførste besøg kan stadig SSL-strippes uden preload.", r: "Tilføj preload og indsend domænet på hstspreload.org."}
+  csp_present:
+    cat: Headers
+    sev: Medium
+    ease: 3
+    ref: "https://developer.mozilla.org/docs/Web/HTTP/CSP"
+    cfg: "Content-Security-Policy: default-src 'self'; frame-ancestors 'none'"
+    en: {t: "Content-Security-Policy present", d: "CSP limits which scripts and resources a page may load.", x: "If any cross-site scripting flaw exists, the attacker's injected script runs unrestricted: it can steal sessions, rewrite the page or capture what users type.", r: "Add a restrictive Content-Security-Policy and tighten it step by step."}
+    da: {t: "Content-Security-Policy er sat", d: "CSP begrænser hvilke scripts og ressourcer en side må indlæse.", x: "Findes der en cross-site scripting-fejl, kører angriberens indsatte script uden begrænsning: det kan stjæle sessioner, omskrive siden eller opsnappe det brugerne taster.", r: "Tilføj en restriktiv Content-Security-Policy og stram den trinvist."}
+  csp_weak:
+    cat: Headers
+    sev: Low
+    ease: 3
+    ref: "https://csp-evaluator.withgoogle.com/"
+    en: {t: "CSP avoids unsafe-inline and unsafe-eval", d: "Unsafe keywords weaken CSP.", x: "Injected inline scripts still execute, so the CSP gives little real protection against XSS.", r: "Use nonces or hashes instead of 'unsafe-inline' and remove 'unsafe-eval'."}
+    da: {t: "CSP undgår unsafe-inline og unsafe-eval", d: "Usikre nøgleord svækker CSP.", x: "Indsatte inline-scripts kører stadig, så CSP giver reelt kun lidt beskyttelse mod XSS.", r: "Brug nonces eller hashes i stedet for 'unsafe-inline', og fjern 'unsafe-eval'."}
+  frame_protection:
+    cat: Headers
+    sev: Medium
+    ease: 4
+    ref: "CWE-1021"
+    cfg: "X-Frame-Options: DENY   (or CSP frame-ancestors 'none')"
+    en: {t: "Clickjacking protection (X-Frame-Options / frame-ancestors)", d: "Controls whether other sites may embed this page in a frame.", x: "Clickjacking: the attacker shows your site in an invisible frame on a decoy page and tricks the user into clicking buttons (change password, confirm payment) on your site.", r: "Send X-Frame-Options: DENY or CSP frame-ancestors."}
+    da: {t: "Beskyttelse mod clickjacking (X-Frame-Options / frame-ancestors)", d: "Styrer om andre sider må vise denne side i en ramme.", x: "Clickjacking: angriberen viser din side usynligt i en ramme på en lokkeside og får brugeren til at klikke på knapper (skift adgangskode, bekræft betaling) på din side.", r: "Send X-Frame-Options: DENY eller CSP frame-ancestors."}
+  nosniff:
+    cat: Headers
+    sev: Low
+    ease: 2
+    ref: "CWE-693"
+    cfg: "X-Content-Type-Options: nosniff"
+    en: {t: "X-Content-Type-Options: nosniff", d: "Stops browsers from guessing content types.", x: "A user-uploaded file can be interpreted as HTML or script and executed in your site's context.", r: "Send X-Content-Type-Options: nosniff."}
+    da: {t: "X-Content-Type-Options: nosniff", d: "Forhindrer browsere i at gætte indholdstype.", x: "En uploadet fil kan blive fortolket som HTML eller script og køre i din sides kontekst.", r: "Send X-Content-Type-Options: nosniff."}
+  referrer_policy:
+    cat: Headers
+    sev: Low
+    ease: 2
+    ref: "https://www.w3.org/TR/referrer-policy/"
+    cfg: "Referrer-Policy: strict-origin-when-cross-origin"
+    en: {t: "Referrer-Policy present", d: "Controls how much URL information leaks to other sites.", x: "Tokens or private paths in URLs leak to third parties through the Referer header.", r: "Send Referrer-Policy: strict-origin-when-cross-origin."}
+    da: {t: "Referrer-Policy er sat", d: "Styrer hvor meget URL-information der lækkes til andre sider.", x: "Tokens eller private stier i URL'er lækkes til tredjeparter via Referer-headeren.", r: "Send Referrer-Policy: strict-origin-when-cross-origin."}
+  permissions_policy:
+    cat: Headers
+    sev: Low
+    ease: 1
+    ref: "https://developer.mozilla.org/docs/Web/HTTP/Headers/Permissions-Policy"
+    en: {t: "Permissions-Policy present", d: "Restricts browser features such as camera, microphone and geolocation.", x: "A compromised third-party script could use powerful browser features on your pages.", r: "Send a Permissions-Policy that disables unused features."}
+    da: {t: "Permissions-Policy er sat", d: "Begrænser browserfunktioner som kamera, mikrofon og placering.", x: "Et kompromitteret tredjepartsscript kan bruge kraftfulde browserfunktioner på dine sider.", r: "Send en Permissions-Policy, der slår ubrugte funktioner fra."}
+  security_txt:
+    cat: Headers
+    sev: Low
+    ease: 1
+    ref: "RFC 9116"
+    en: {t: "security.txt published", d: "security.txt tells researchers how to report vulnerabilities.", x: "Without a contact point, a vulnerability found by a well-meaning researcher may go unreported or be disclosed publicly instead.", r: "Publish /.well-known/security.txt with Contact and Expires fields (securitytxt.org)."}
+    da: {t: "security.txt er publiceret", d: "security.txt fortæller sikkerhedsforskere, hvordan de rapporterer sårbarheder.", x: "Uden kontaktpunkt bliver en fundet sårbarhed måske aldrig rapporteret, eller den offentliggøres i stedet.", r: "Publicér /.well-known/security.txt med Contact og Expires (securitytxt.org)."}
+  version_disclosure:
+    cat: Headers
+    sev: Low
+    ease: 4
+    ref: "CWE-200"
+    cfg: "nginx: server_tokens off;  Apache: ServerTokens Prod;  PHP: expose_php=Off"
+    en: {t: "No version disclosure in {header} header", d: "The server reveals software name and version.", x: "Attackers read the version, look it up in public vulnerability databases and pick a matching ready-made exploit.", r: "Hide version details in server headers."}
+    da: {t: "Ingen versionsoplysninger i headeren {header}", d: "Serveren afslører softwarenavn og version.", x: "Angribere aflæser versionen, slår den op i offentlige sårbarhedsdatabaser og vælger en færdig exploit, der passer.", r: "Skjul versionsoplysninger i server-headere."}
+  cookie_flags:
+    cat: Cookies
+    sev: Medium
+    ease: 3
+    ref: "CWE-614, CWE-1004"
+    cfg: "Set-Cookie: name=value; Secure; HttpOnly; SameSite=Lax"
+    en: {t: "Cookie '{name}' has Secure, HttpOnly and SameSite", d: "Cookie security attributes protect session cookies.", x: "Without Secure the cookie travels over HTTP and can be sniffed; without HttpOnly an XSS flaw can read it; without SameSite it is sent along with forged cross-site requests (CSRF).", r: "Set Secure, HttpOnly and SameSite on all session cookies."}
+    da: {t: "Cookie '{name}' har Secure, HttpOnly og SameSite", d: "Cookie-attributter beskytter session-cookies.", x: "Uden Secure sendes cookien over HTTP og kan opsnappes; uden HttpOnly kan en XSS-fejl læse den; uden SameSite sendes den med forfalskede forespørgsler fra andre sider (CSRF).", r: "Sæt Secure, HttpOnly og SameSite på alle session-cookies."}
+  tls_no_connection:
+    cat: TLS
+    sev: High
+    ease: 3
+    ref: "RFC 8446"
+    en: {t: "TLS connection can be established", d: "The server must complete a TLS handshake.", x: "Clients cannot connect securely.", r: "Check that HTTPS is enabled on the port."}
+    da: {t: "TLS-forbindelse kan oprettes", d: "Serveren skal kunne gennemføre et TLS-handshake.", x: "Klienter kan ikke forbinde sikkert.", r: "Kontrollér at HTTPS er aktiveret på porten."}
+  tls_legacy_disabled:
+    cat: TLS
+    sev: High
+    ease: 2
+    ref: "RFC 8996"
+    cfg: "nginx: ssl_protocols TLSv1.2 TLSv1.3;"
+    en: {t: "TLS 1.0 and 1.1 are disabled", d: "Deprecated protocol versions (RFC 8996).", x: "A man-in-the-middle can force clients down to old protocol versions and use known weaknesses (BEAST, POODLE-TLS) to recover encrypted data.", r: "Disable TLS 1.0 and 1.1."}
+    da: {t: "TLS 1.0 og 1.1 er slået fra", d: "Forældede protokolversioner (RFC 8996).", x: "En man-in-the-middle kan tvinge klienter ned på gamle protokolversioner og udnytte kendte svagheder (BEAST, POODLE-TLS) til at udlede krypterede data.", r: "Slå TLS 1.0 og 1.1 fra."}
+  tls12_supported:
+    cat: TLS
+    sev: Medium
+    ease: 1
+    ref: "RFC 9325"
+    en: {t: "TLS 1.2 supported", d: "TLS 1.2 is the required baseline.", x: "Clients without TLS 1.3 cannot connect securely.", r: "Enable TLS 1.2."}
+    da: {t: "TLS 1.2 understøttes", d: "TLS 1.2 er den påkrævede minimumsstandard.", x: "Klienter uden TLS 1.3 kan ikke forbinde sikkert.", r: "Aktivér TLS 1.2."}
+  tls13_supported:
+    cat: TLS
+    sev: Low
+    ease: 1
+    ref: "RFC 8446"
+    en: {t: "TLS 1.3 supported", d: "TLS 1.3 is faster and removes legacy features.", x: "Sessions rely on older protocol design with more historical weaknesses.", r: "Enable TLS 1.3."}
+    da: {t: "TLS 1.3 understøttes", d: "TLS 1.3 er hurtigere og har fjernet forældede funktioner.", x: "Sessioner bygger på ældre protokoldesign med flere historiske svagheder.", r: "Aktivér TLS 1.3."}
+  tls_compression:
+    cat: TLS
+    sev: High
+    ease: 2
+    ref: "CVE-2012-4929 (CRIME)"
+    en: {t: "TLS compression disabled", d: "TLS-level compression.", x: "CRIME: an attacker who can make the victim's browser send requests can recover secrets such as session cookies by observing compressed sizes.", r: "Disable TLS compression (the default in modern builds)."}
+    da: {t: "TLS-kompression er slået fra", d: "Kompression på TLS-niveau.", x: "CRIME: en angriber, der kan få offerets browser til at sende forespørgsler, kan udlede hemmeligheder som session-cookies ved at observere de komprimerede størrelser.", r: "Slå TLS-kompression fra (standard i moderne builds)."}
+  cipher_insecure:
+    cat: TLS
+    sev: High
+    ease: 2
+    ref: "RFC 9325"
+    cfg: "nginx: ssl_ciphers 'ECDHE+AESGCM:ECDHE+CHACHA20'; ssl_prefer_server_ciphers on;"
+    en: {t: "No insecure cipher suites (RC4, 3DES, NULL, EXPORT, anonymous)", d: "Broken or export-grade ciphers must not be accepted.", x: "An attacker who can record traffic can decrypt or tamper with sessions (for example SWEET32 against 3DES, RC4 biases).", r: "Remove insecure cipher suites."}
+    da: {t: "Ingen usikre cipher suites (RC4, 3DES, NULL, EXPORT, anonyme)", d: "Brudte eller eksport-svage ciphers må ikke accepteres.", x: "En angriber, der kan optage trafik, kan dekryptere eller manipulere sessioner (fx SWEET32 mod 3DES, RC4-bias).", r: "Fjern usikre cipher suites."}
+  cipher_no_pfs:
+    cat: TLS
+    sev: Medium
+    ease: 2
+    ref: "RFC 9325"
+    en: {t: "All cipher suites offer forward secrecy", d: "Suites with static RSA key exchange are accepted.", x: "If the server's private key ever leaks, an attacker who recorded traffic earlier can decrypt all of it afterwards.", r: "Allow only ECDHE/DHE suites."}
+    da: {t: "Alle cipher suites giver forward secrecy", d: "Suites med statisk RSA-nøgleudveksling accepteres.", x: "Lækker serverens private nøgle på et tidspunkt, kan en angriber, der tidligere har optaget trafik, dekryptere alt bagefter.", r: "Tillad kun ECDHE/DHE-suites."}
+  cipher_cbc:
+    cat: TLS
+    sev: Low
+    ease: 1
+    ref: "RFC 9325"
+    en: {t: "No CBC-mode cipher suites (phase-out)", d: "CBC suites are accepted.", x: "CBC mode has a history of padding-oracle attacks (Lucky13, POODLE-TLS).", r: "Prefer AES-GCM and ChaCha20-Poly1305."}
+    da: {t: "Ingen CBC-cipher suites (udfases)", d: "CBC-suites accepteres.", x: "CBC-tilstand har en historik med padding-oracle-angreb (Lucky13, POODLE-TLS).", r: "Foretræk AES-GCM og ChaCha20-Poly1305."}
+  cert_trusted:
+    cat: TLS
+    sev: High
+    ease: 4
+    ref: "RFC 5280, RFC 6125"
+    en: {t: "Certificate is trusted and matches the hostname", d: "Chain, expiry and hostname are verified against the system trust store.", x: "Users see browser warnings and learn to click through them. An attacker with a self-made certificate can then perform man-in-the-middle attacks unnoticed.", r: "Install a certificate from a public CA that lists the domain and include the full intermediate chain."}
+    da: {t: "Certifikatet er betroet og matcher værtsnavnet", d: "Kæde, udløb og værtsnavn verificeres mod systemets tillidsliste.", x: "Brugerne ser browseradvarsler og lærer at klikke sig igennem dem. En angriber med et selvlavet certifikat kan så udføre man-in-the-middle-angreb uden at blive opdaget.", r: "Installér et certifikat fra en offentlig CA, der dækker domænet, og medsend hele mellemcertifikat-kæden."}
+  cert_expiry:
+    cat: TLS
+    sev: Medium
+    ease: 2
+    ref: "RFC 5280"
+    en: {t: "Certificate valid for at least 30 more days", d: "Expired certificates break the site.", x: "An expired certificate causes outages and trains users to ignore warnings, which an attacker later exploits.", r: "Automate renewal (certbot, acme.sh)."}
+    da: {t: "Certifikatet er gyldigt i mindst 30 dage endnu", d: "Udløbne certifikater ødelægger siden.", x: "Et udløbet certifikat giver nedetid og lærer brugerne at ignorere advarsler, hvilket en angriber senere kan udnytte.", r: "Automatisér fornyelse (certbot, acme.sh)."}
+  cert_key:
+    cat: TLS
+    sev: High
+    ease: 1
+    ref: "NIST SP 800-57"
+    en: {t: "Certificate key is strong enough", d: "Public key type and size.", x: "Short keys can be factored, letting an attacker impersonate the site.", r: "Use RSA 2048+ or ECDSA P-256."}
+    da: {t: "Certifikatets nøgle er stærk nok", d: "Offentlig nøgletype og -størrelse.", x: "Korte nøgler kan faktoriseres, så en angriber kan udgive sig for at være siden.", r: "Brug RSA 2048+ eller ECDSA P-256."}
+  cert_sig:
+    cat: TLS
+    sev: High
+    ease: 1
+    ref: "RFC 9325"
+    en: {t: "Certificate signature uses a secure hash", d: "Signature algorithm of the certificate.", x: "MD5/SHA-1 collisions enable forged certificates.", r: "Reissue the certificate with SHA-256 or better."}
+    da: {t: "Certifikatets signatur bruger en sikker hash", d: "Certifikatets signaturalgoritme.", x: "MD5/SHA-1-kollisioner gør forfalskede certifikater mulige.", r: "Udstil certifikatet igen med SHA-256 eller bedre."}
+  cert_sct:
+    cat: TLS
+    sev: Low
+    ease: 1
+    ref: "RFC 9162"
+    en: {t: "Certificate Transparency SCTs embedded", d: "Certificate Transparency makes mis-issued certificates publicly detectable.", x: "Rogue certificates for your domain would be harder to detect.", r: "Use a public CA that embeds SCTs."}
+    da: {t: "Certificate Transparency (SCT) er indlejret", d: "Certificate Transparency gør fejludstedte certifikater offentligt synlige.", x: "Falske certifikater til dit domæne er sværere at opdage.", r: "Brug en offentlig CA, der indlejrer SCT'er."}
+  tls_reneg:
+    cat: TLS
+    sev: Medium
+    ease: 2
+    ref: "RFC 5746"
+    en: {t: "Secure renegotiation supported", d: "RFC 5746 renegotiation indication.", x: "Without it an attacker can inject data into a victim's TLS session (renegotiation attack).", r: "Update the TLS library or server."}
+    da: {t: "Sikker renegotiation understøttes", d: "RFC 5746 renegotiation indication.", x: "Uden den kan en angriber indsprøjte data i offerets TLS-session (renegotiation-angreb).", r: "Opdatér TLS-biblioteket eller serveren."}
+  ocsp_stapling:
+    cat: TLS
+    sev: Low
+    ease: 1
+    ref: "RFC 6066"
+    cfg: "nginx: ssl_stapling on; ssl_stapling_verify on;"
+    en: {t: "OCSP stapling enabled", d: "The server staples a fresh revocation status to the handshake.", x: "Revoked certificates are harder for clients to detect.", r: "Enable OCSP stapling."}
+    da: {t: "OCSP stapling er aktiveret", d: "Serveren vedhæfter en frisk tilbagekaldelsesstatus til handshaket.", x: "Tilbagekaldte certifikater er sværere for klienter at opdage.", r: "Aktivér OCSP stapling."}
+  dnssec_signed:
+    cat: DNSSEC
+    sev: Medium
+    ease: 2
+    ref: "RFC 4033-4035"
+    en: {t: "Domain is DNSSEC-signed", d: "DNSSEC protects DNS answers against forgery.", x: "DNS cache poisoning or a malicious resolver can return forged IP addresses. Users are sent to the attacker's server, and an attacker who controls DNS can also pass domain validation to obtain a certificate.", r: "Enable DNSSEC at your DNS host and publish the DS record at your registrar."}
+    da: {t: "Domænet er DNSSEC-signeret", d: "DNSSEC beskytter DNS-svar mod forfalskning.", x: "DNS cache poisoning eller en ondsindet resolver kan returnere forfalskede IP-adresser. Brugerne sendes til angriberens server, og en angriber der styrer DNS kan også bestå domænevalidering og få udstedt et certifikat.", r: "Aktivér DNSSEC hos din DNS-udbyder og publicér DS-recorden hos din registrar."}
+  dnssec_valid:
+    cat: DNSSEC
+    sev: High
+    ease: 2
+    ref: "RFC 4033-4035"
+    en: {t: "DNSSEC signatures are valid", d: "A validating resolver confirms the chain of trust from the root.", x: "With a broken chain, validating resolvers refuse to resolve the domain (outage) and operators often respond by disabling DNSSEC in a hurry.", r: "Fix the DS/DNSKEY chain or expired signatures."}
+    da: {t: "DNSSEC-signaturer er gyldige", d: "En validerende resolver bekræfter tillidskæden fra roden.", x: "Med en brudt kæde nægter validerende resolvere at slå domænet op (nedetid), og driftsfolk reagerer ofte ved i hast at slå DNSSEC fra.", r: "Ret DS/DNSKEY-kæden eller udløbne signaturer."}
+  dnssec_algo:
+    cat: DNSSEC
+    sev: Medium
+    ease: 1
+    ref: "RFC 8624"
+    en: {t: "DNSSEC algorithm is secure", d: "Signing algorithm used by the zone.", x: "SHA-1 based or GOST algorithms are deprecated and weaker against forgery.", r: "Roll over to ECDSAP256SHA256 (13) or ED25519 (15)."}
+    da: {t: "DNSSEC-algoritmen er sikker", d: "Signeringsalgoritme brugt af zonen.", x: "SHA-1-baserede eller GOST-algoritmer er forældede og svagere mod forfalskning.", r: "Skift til ECDSAP256SHA256 (13) eller ED25519 (15)."}
+  dnssec_expiry:
+    cat: DNSSEC
+    sev: Medium
+    ease: 1
+    ref: "RFC 4033-4035"
+    en: {t: "DNSSEC signatures are not about to expire", d: "RRSIG validity period.", x: "Expired signatures make the domain unreachable for validating resolvers.", r: "Check the automatic re-signing process."}
+    da: {t: "DNSSEC-signaturer er ikke ved at udløbe", d: "RRSIG-gyldighedsperiode.", x: "Udløbne signaturer gør domænet utilgængeligt for validerende resolvere.", r: "Kontrollér den automatiske gen-signering."}
+  dnssec_unknown:
+    cat: DNSSEC
+    sev: Info
+    en: {t: "DNSSEC status could not be determined", d: "The DNS lookup was inconclusive.", x: "", r: ""}
+    da: {t: "DNSSEC-status kunne ikke afgøres", d: "DNS-opslaget var uafklaret.", x: "", r: ""}
+  dns_skipped:
+    cat: DNSSEC
+    sev: Info
+    en: {t: "DNS checks skipped", d: "The validating resolvers could not be reached or the target is an IP address.", x: "", r: ""}
+    da: {t: "DNS-tests sprunget over", d: "De validerende resolvere kunne ikke nås, eller målet er en IP-adresse.", x: "", r: ""}
+  dane_present:
+    cat: DANE
+    sev: Info
+    ref: "RFC 6698, RFC 7671"
+    en: {t: "DANE (TLSA) published", d: "DANE lets the domain owner pin the allowed TLS certificate in DNSSEC-signed DNS.", x: "", r: "Optional: publish TLSA records once DNSSEC is in place."}
+    da: {t: "DANE (TLSA) er publiceret", d: "DANE lader domæneejeren fastlåse det tilladte TLS-certifikat i DNSSEC-signeret DNS.", x: "", r: "Valgfrit: publicér TLSA-records når DNSSEC er på plads."}
+  dane_validated:
+    cat: DANE
+    sev: High
+    ease: 2
+    ref: "RFC 6698"
+    en: {t: "TLSA records are DNSSEC-validated", d: "TLSA is only trustworthy when protected by DNSSEC.", x: "Unsigned TLSA data can be forged, so the pinning gives no protection.", r: "Sign the zone with DNSSEC."}
+    da: {t: "TLSA-records er DNSSEC-valideret", d: "TLSA er kun troværdig, når den er beskyttet af DNSSEC.", x: "Usigneret TLSA-data kan forfalskes, så fastlåsningen giver ingen beskyttelse.", r: "Signér zonen med DNSSEC."}
+  dane_match:
+    cat: DANE
+    sev: High
+    ease: 1
+    ref: "RFC 7671"
+    en: {t: "TLSA record matches the presented certificate", d: "The TLSA hash must match the served certificate.", x: "Clients enforcing DANE refuse the connection (outage) after a certificate renewal that was not mirrored in DNS.", r: "Update the TLSA record whenever the certificate or key changes."}
+    da: {t: "TLSA-recorden matcher det præsenterede certifikat", d: "TLSA-hashen skal matche det certifikat, serveren viser.", x: "Klienter der håndhæver DANE afviser forbindelsen (nedetid) efter en certifikatfornyelse, der ikke er afspejlet i DNS.", r: "Opdatér TLSA-recorden hver gang certifikat eller nøgle skifter."}
+  dane_unverified:
+    cat: DANE
+    sev: Info
+    ref: "RFC 7671"
+    en: {t: "TLSA usage 0/2 (CA / trust anchor) not verified automatically", d: "Only usage 1 and 3 can be checked against the leaf certificate.", x: "", r: ""}
+    da: {t: "TLSA usage 0/2 (CA / trust anchor) er ikke verificeret automatisk", d: "Kun usage 1 og 3 kan kontrolleres mod slutcertifikatet.", x: "", r: ""}
+  ipv6_web:
+    cat: IPv6
+    sev: Low
+    ease: 1
+    ref: "RFC 8200"
+    en: {t: "Web server has an IPv6 address", d: "The website is reachable via IPv6.", x: "IPv6-only users cannot reach the site.", r: "Add an AAAA record and enable IPv6 on the web server."}
+    da: {t: "Webserveren har en IPv6-adresse", d: "Hjemmesiden kan nås via IPv6.", x: "Brugere med kun IPv6 kan ikke nå siden.", r: "Tilføj en AAAA-record og aktivér IPv6 på webserveren."}
+  ipv6_ns:
+    cat: IPv6
+    sev: Low
+    ease: 1
+    ref: "RFC 3901"
+    en: {t: "All name servers have IPv6 addresses", d: "Authoritative DNS servers should be reachable over IPv6.", x: "IPv6-only resolvers may fail to resolve the domain.", r: "Use IPv6-enabled name servers."}
+    da: {t: "Alle navneservere har IPv6-adresser", d: "Autoritative DNS-servere bør kunne nås via IPv6.", x: "Resolvere med kun IPv6 kan fejle ved opslag af domænet.", r: "Brug navneservere med IPv6."}
+  ipv6_reach:
+    cat: IPv6
+    sev: Low
+    ease: 1
+    ref: "RFC 8305"
+    en: {t: "Web server reachable over IPv6", d: "An AAAA record exists and the server should answer on it.", x: "IPv6 users get timeouts or slow fallbacks.", r: "Fix firewall and listening rules for IPv6."}
+    da: {t: "Webserveren kan nås over IPv6", d: "Der findes en AAAA-record, og serveren bør svare på den.", x: "IPv6-brugere får timeouts eller langsom fallback.", r: "Ret firewall- og lytteregler for IPv6."}
+  ipv6_untested:
+    cat: IPv6
+    sev: Info
+    en: {t: "IPv6 reachability could not be tested", d: "The scanning machine has no IPv6 connectivity.", x: "", r: ""}
+    da: {t: "IPv6-tilgængelighed kunne ikke testes", d: "Scanner-maskinen har ingen IPv6-forbindelse.", x: "", r: ""}
+  caa:
+    cat: DNS
+    sev: Low
+    ease: 1
+    ref: "RFC 8659"
+    cfg: "example.com. CAA 0 issue \"letsencrypt.org\""
+    en: {t: "CAA record restricts certificate issuance", d: "CAA names the certificate authorities allowed to issue certificates for the domain.", x: "Any public CA can be tricked into issuing a certificate for your domain, which an attacker can use for a convincing man-in-the-middle.", r: "Publish a CAA record naming only your CA."}
+    da: {t: "CAA-record begrænser udstedelse af certifikater", d: "CAA angiver hvilke certifikatudstedere der må udstede certifikater til domænet.", x: "Enhver offentlig CA kan narres til at udstede et certifikat til dit domæne, som en angriber kan bruge til et overbevisende man-in-the-middle-angreb.", r: "Publicér en CAA-record, der kun nævner din CA."}
+  dangling_cname:
+    cat: DNS
+    sev: Medium
+    ease: 3
+    ref: "CWE-1327"
+    en: {t: "No dangling CNAME for {host}", d: "A CNAME pointing at a name that no longer exists.", x: "An attacker may register the missing target at the provider and take over the subdomain, then host phishing pages on your real domain or capture cookies scoped to the parent domain.", r: "Remove DNS records that point to services you no longer use."}
+    da: {t: "Ingen hængende CNAME for {host}", d: "En CNAME der peger på et navn, som ikke længere findes.", x: "En angriber kan registrere det manglende mål hos udbyderen og overtage underdomænet, hoste phishing på dit rigtige domæne eller opsnappe cookies, der gælder for hoveddomænet.", r: "Fjern DNS-records, der peger på tjenester du ikke længere bruger."}
+  takeover:
+    cat: DNS
+    sev: High
+    ease: 4
+    ref: "CWE-1327"
+    en: {t: "Subdomain {host} cannot be taken over ({service})", d: "The subdomain points at a cloud service where the resource no longer exists.", x: "An attacker claims the unused resource at {service} and now controls content served on {host}: phishing under your real domain, malware, or theft of cookies.", r: "Delete the DNS record or re-claim the resource at the provider."}
+    da: {t: "Underdomænet {host} kan ikke overtages ({service})", d: "Underdomænet peger på en skytjeneste, hvor ressourcen ikke længere findes.", x: "En angriber registrerer den ubrugte ressource hos {service} og styrer nu indholdet på {host}: phishing under dit rigtige domæne, malware eller tyveri af cookies.", r: "Slet DNS-recorden, eller genindtag ressourcen hos udbyderen."}
+  mail_none:
+    cat: Mail
+    sev: Info
+    en: {t: "Domain has no MX records - mail checks skipped", d: "The domain does not receive mail.", x: "", r: ""}
+    da: {t: "Domænet har ingen MX-records - mailtests sprunget over", d: "Domænet modtager ikke mail.", x: "", r: ""}
+  spf:
+    cat: Mail
+    sev: Medium
+    ease: 4
+    ref: "RFC 7208"
+    cfg: "example.com. TXT \"v=spf1 mx -all\""
+    en: {t: "SPF record with a strict policy", d: "SPF lists the servers allowed to send mail for the domain.", x: "Anyone can send mail that appears to come from your domain: phishing and CEO fraud against your customers and staff.", r: "Publish an SPF record ending in -all (or ~all)."}
+    da: {t: "SPF-record med streng politik", d: "SPF angiver hvilke servere der må sende mail for domænet.", x: "Hvem som helst kan sende mail, der ser ud til at komme fra dit domæne: phishing og direktørsvindel mod dine kunder og medarbejdere.", r: "Publicér en SPF-record, der slutter på -all (eller ~all)."}
+  dmarc:
+    cat: Mail
+    sev: Medium
+    ease: 4
+    ref: "RFC 7489"
+    cfg: "_dmarc.example.com. TXT \"v=DMARC1; p=reject; rua=mailto:dmarc@example.com\""
+    en: {t: "DMARC with quarantine or reject policy", d: "DMARC tells receiving servers what to do with spoofed mail.", x: "Spoofed mail from your domain is delivered normally, so attackers can impersonate you convincingly.", r: "Publish DMARC and move from p=none to p=quarantine or p=reject."}
+    da: {t: "DMARC med quarantine- eller reject-politik", d: "DMARC fortæller modtagende servere, hvad de skal gøre med forfalsket mail.", x: "Forfalsket mail fra dit domæne leveres som normalt, så angribere kan udgive sig overbevisende for at være dig.", r: "Publicér DMARC og skift fra p=none til p=quarantine eller p=reject."}
+  mta_sts:
+    cat: Mail
+    sev: Low
+    ease: 2
+    ref: "RFC 8461"
+    en: {t: "MTA-STS in enforce mode", d: "MTA-STS forces TLS for mail delivery.", x: "A man-in-the-middle can strip STARTTLS and read mail in transit.", r: "Publish _mta-sts TXT and a policy file with mode: enforce."}
+    da: {t: "MTA-STS i enforce-tilstand", d: "MTA-STS gør TLS obligatorisk ved mailaflevering.", x: "En man-in-the-middle kan fjerne STARTTLS og læse mail undervejs.", r: "Publicér _mta-sts TXT og en politikfil med mode: enforce."}
+  tls_rpt:
+    cat: Mail
+    sev: Low
+    ease: 1
+    ref: "RFC 8460"
+    en: {t: "TLS-RPT reporting configured", d: "TLS-RPT delivers reports on mail TLS failures.", x: "TLS downgrade attempts against your mail go unnoticed.", r: "Publish a _smtp._tls TXT record."}
+    da: {t: "TLS-RPT-rapportering er sat op", d: "TLS-RPT leverer rapporter om TLS-fejl ved mail.", x: "Forsøg på TLS-nedgradering mod din mail opdages ikke.", r: "Publicér en _smtp._tls TXT-record."}
+  mail_dane:
+    cat: Mail
+    sev: Low
+    ease: 1
+    ref: "RFC 7672"
+    en: {t: "DANE for mail server {host}", d: "DANE-SMTP pins the mail server certificate in DNSSEC.", x: "STARTTLS can be stripped or faked by a man-in-the-middle.", r: "Publish TLSA records for the MX host."}
+    da: {t: "DANE for mailserver {host}", d: "DANE-SMTP fastlåser mailserverens certifikat i DNSSEC.", x: "STARTTLS kan fjernes eller forfalskes af en man-in-the-middle.", r: "Publicér TLSA-records for MX-værten."}
+  mail_starttls:
+    cat: Mail
+    sev: High
+    ease: 3
+    ref: "RFC 3207"
+    en: {t: "STARTTLS offered by {host}", d: "The mail server should encrypt connections.", x: "Mail between servers travels in clear text and can be read or altered by anyone on the path.", r: "Enable STARTTLS with a valid certificate."}
+    da: {t: "STARTTLS tilbydes af {host}", d: "Mailserveren bør kryptere forbindelser.", x: "Mail mellem servere sendes i klartekst og kan læses eller ændres af alle på vejen.", r: "Aktivér STARTTLS med et gyldigt certifikat."}
+  mail_starttls_untested:
+    cat: Mail
+    sev: Info
+    en: {t: "STARTTLS test of {host} not possible", d: "Outbound port 25 is often blocked by ISPs.", x: "", r: ""}
+    da: {t: "STARTTLS-test af {host} ikke mulig", d: "Udgående port 25 er ofte blokeret af internetudbydere.", x: "", r: ""}
+  dkim:
+    cat: Mail
+    sev: Low
+    ease: 3
+    ref: "RFC 6376"
+    en: {t: "DKIM key found for common selectors", d: "DKIM signs outgoing mail. Only common selectors can be probed.", x: "Without DKIM, forged mail is harder for recipients to distinguish from genuine mail.", r: "Enable DKIM signing at your mail provider."}
+    da: {t: "DKIM-nøgle fundet for almindelige selectors", d: "DKIM signerer udgående mail. Kun almindelige selectors kan afprøves.", x: "Uden DKIM er forfalsket mail sværere for modtagere at skelne fra ægte mail.", r: "Aktivér DKIM-signering hos din mailudbyder."}
+  tech_detected:
+    cat: Technology
+    sev: Info
+    en: {t: "{product} {version}", d: "Detected technology ({kind}).", x: "", r: ""}
+    da: {t: "{product} {version}", d: "Fundet teknologi ({kind}).", x: "", r: ""}
+  cve:
+    cat: Vulnerabilities
+    sev: High
+    ease: 3
+    ref: "{link}"
+    en: {t: "{cve_id} in {product} {version} (CVSS {cvss})", d: "Known vulnerability (NVD): {summary}", x: "Publicly known vulnerabilities often have ready-made exploits. An attacker who can read the version from a header or file looks up the CVE and runs an existing exploit without finding a new flaw. {kev_note}", r: "Update {product} to a fixed version. The version is detected from outside and may be a distribution package with back-ported fixes, so verify on the server."}
+    da: {t: "{cve_id} i {product} {version} (CVSS {cvss})", d: "Kendt sårbarhed (NVD): {summary}", x: "Offentligt kendte sårbarheder har ofte færdige exploits. En angriber, der kan læse versionen i en header eller fil, slår CVE'en op og kører en eksisterende exploit uden selv at finde en ny fejl. {kev_note}", r: "Opdatér {product} til en rettet version. Versionen er aflæst udefra og kan være en distributionspakke med bagudporterede rettelser, så verificér på serveren."}
+  cve_more:
+    cat: Vulnerabilities
+    sev: Info
+    en: {t: "{count} more CVEs for {product} {version} not listed", d: "Only the most severe CVEs are listed individually.", x: "", r: "Update {product} to the latest supported version."}
+    da: {t: "{count} flere CVE'er for {product} {version} er ikke vist", d: "Kun de alvorligste CVE'er vises enkeltvis.", x: "", r: "Opdatér {product} til den nyeste understøttede version."}
+  cve_lookup_failed:
+    cat: Vulnerabilities
+    sev: Info
+    en: {t: "CVE lookup for {product} failed", d: "The vulnerability database could not be reached: {reason}", x: "", r: "Run the scan again later, or set NVD_API_KEY for higher rate limits."}
+    da: {t: "CVE-opslag for {product} mislykkedes", d: "Sårbarhedsdatabasen kunne ikke nås: {reason}", x: "", r: "Kør scanningen igen senere, eller sæt NVD_API_KEY for højere grænser."}
+  js_vulnerable:
+    cat: Vulnerabilities
+    sev: Medium
+    ease: 3
+    ref: "https://osv.dev"
+    en: {t: "Vulnerable JavaScript library {lib} {version}", d: "Known vulnerabilities in this library version: {ids}. {summary}", x: "Attackers look up the public advisories for the library and craft input that triggers the flaw (typically cross-site scripting) on any page that uses it.", r: "Update {lib} to a current version."}
+    da: {t: "Sårbart JavaScript-bibliotek {lib} {version}", d: "Kendte sårbarheder i denne biblioteksversion: {ids}. {summary}", x: "Angribere slår de offentlige sikkerhedsbulletiner op og laver input, der udløser fejlen (typisk cross-site scripting) på alle sider, der bruger biblioteket.", r: "Opdatér {lib} til en aktuel version."}
+  exposed_git:
+    cat: Exposure
+    sev: High
+    ease: 5
+    ref: "CWE-538"
+    en: {t: "Git repository is not exposed", d: "The /.git/ folder is reachable from the web.", x: "An attacker downloads the whole repository with a free tool, reads source code, history and often passwords or API keys, then uses them to attack the site or its services.", r: "Block access to dotfolders in the web server and remove .git from the web root."}
+    da: {t: "Git-repository er ikke eksponeret", d: "Mappen /.git/ kan nås fra nettet.", x: "En angriber henter hele repositoryet med et gratis værktøj, læser kildekode, historik og ofte adgangskoder eller API-nøgler og bruger dem til at angribe siden eller dens tjenester.", r: "Bloker adgang til punktum-mapper i webserveren, og fjern .git fra webroden."}
+  exposed_env:
+    cat: Exposure
+    sev: Critical
+    ease: 5
+    ref: "CWE-538"
+    en: {t: ".env file is not exposed", d: "A configuration file with secrets is reachable from the web.", x: "The file typically contains database passwords, mail credentials and API keys. An attacker downloads it with one request and logs straight in.", r: "Remove the file from the web root, block dotfiles, and rotate every secret in it immediately."}
+    da: {t: ".env-filen er ikke eksponeret", d: "En konfigurationsfil med hemmeligheder kan nås fra nettet.", x: "Filen indeholder typisk databaseadgangskoder, mail-logins og API-nøgler. En angriber henter den med ét opkald og logger direkte ind.", r: "Fjern filen fra webroden, bloker punktum-filer, og skift alle hemmeligheder i den med det samme."}
+  exposed_backup:
+    cat: Exposure
+    sev: High
+    ease: 5
+    ref: "CWE-530"
+    en: {t: "No backup or database dump is exposed ({path})", d: "A backup file is downloadable from the web.", x: "Backups contain the complete site and often the database with customer data. Attackers scan for common file names and download them.", r: "Delete backups from the web root and store them outside it."}
+    da: {t: "Ingen backup eller databasedump er eksponeret ({path})", d: "En backupfil kan hentes fra nettet.", x: "Backups indeholder hele siden og ofte databasen med kundedata. Angribere scanner efter almindelige filnavne og henter dem.", r: "Slet backups fra webroden, og gem dem uden for den."}
+  exposed_phpinfo:
+    cat: Exposure
+    sev: Medium
+    ease: 4
+    ref: "CWE-200"
+    en: {t: "phpinfo page is not exposed ({path})", d: "A page printing the full PHP configuration is public.", x: "It reveals exact versions, paths, modules and environment variables, which helps an attacker pick exploits and sometimes leaks secrets.", r: "Delete the file."}
+    da: {t: "phpinfo-siden er ikke eksponeret ({path})", d: "En side der udskriver hele PHP-konfigurationen er offentlig.", x: "Den afslører præcise versioner, stier, moduler og miljøvariabler, hvilket hjælper en angriber med at vælge exploits og undertiden lækker hemmeligheder.", r: "Slet filen."}
+  exposed_serverstatus:
+    cat: Exposure
+    sev: Medium
+    ease: 4
+    ref: "CWE-200"
+    en: {t: "Server status page is not exposed ({path})", d: "Apache server-status or server-info is public.", x: "It shows live requests including URLs and client IPs, which can leak session tokens in URLs and reveal internal paths.", r: "Restrict the status handler to localhost."}
+    da: {t: "Serverstatus-siden er ikke eksponeret ({path})", d: "Apache server-status eller server-info er offentlig.", x: "Den viser live forespørgsler inkl. URL'er og klient-IP'er, hvilket kan lække session-tokens i URL'er og afsløre interne stier.", r: "Begræns status-handleren til localhost."}
+  exposed_dsstore:
+    cat: Exposure
+    sev: Low
+    ease: 4
+    ref: "CWE-538"
+    en: {t: ".DS_Store file is not exposed", d: "A macOS folder metadata file is public.", x: "It lists file names in the folder, which reveals hidden files an attacker can then request directly.", r: "Delete .DS_Store files and block them in the web server."}
+    da: {t: ".DS_Store-filen er ikke eksponeret", d: "En macOS-mappefil er offentlig.", x: "Den viser filnavne i mappen og afslører skjulte filer, som en angriber så kan hente direkte.", r: "Slet .DS_Store-filer, og bloker dem i webserveren."}
+  exposed_htpasswd:
+    cat: Exposure
+    sev: High
+    ease: 5
+    ref: "CWE-538"
+    en: {t: ".htpasswd file is not exposed", d: "The password file for HTTP authentication is public.", x: "The password hashes can be cracked offline, giving access to the protected areas.", r: "Move the file outside the web root and change the passwords."}
+    da: {t: ".htpasswd-filen er ikke eksponeret", d: "Adgangskodefilen til HTTP-godkendelse er offentlig.", x: "Hashes kan knækkes offline og giver adgang til de beskyttede områder.", r: "Flyt filen uden for webroden, og skift adgangskoderne."}
+  exposed_config:
+    cat: Exposure
+    sev: High
+    ease: 5
+    ref: "CWE-538"
+    en: {t: "No configuration file is exposed ({path})", d: "A configuration file or backup copy of one is downloadable.", x: "Configuration files contain database credentials and secret keys. Copies such as .bak are served as plain text instead of being executed.", r: "Remove backup copies from the web root and rotate the credentials."}
+    da: {t: "Ingen konfigurationsfil er eksponeret ({path})", d: "En konfigurationsfil eller en sikkerhedskopi af den kan hentes.", x: "Konfigurationsfiler indeholder databaseadgang og hemmelige nøgler. Kopier som .bak leveres som ren tekst i stedet for at blive udført.", r: "Fjern sikkerhedskopier fra webroden, og skift legitimationsoplysningerne."}
+  exposed_vcs:
+    cat: Exposure
+    sev: High
+    ease: 5
+    ref: "CWE-538"
+    en: {t: "No version-control metadata is exposed ({path})", d: "Subversion or Mercurial metadata is public.", x: "Source code and history can be reconstructed, often revealing credentials.", r: "Remove the folders from the web root."}
+    da: {t: "Ingen versionsstyrings-metadata er eksponeret ({path})", d: "Subversion- eller Mercurial-metadata er offentlig.", x: "Kildekode og historik kan genskabes og afslører ofte adgangskoder.", r: "Fjern mapperne fra webroden."}
+  exposed_debuglog:
+    cat: Exposure
+    sev: High
+    ease: 5
+    ref: "CWE-532"
+    en: {t: "No debug or error log is exposed ({path})", d: "An application log is downloadable.", x: "Logs contain file paths, SQL errors, user names and sometimes tokens, which give an attacker a map of the application.", r: "Move logs outside the web root and disable debug logging."}
+    da: {t: "Ingen debug- eller fejllog er eksponeret ({path})", d: "En applikationslog kan hentes.", x: "Logs indeholder filstier, SQL-fejl, brugernavne og undertiden tokens, hvilket giver en angriber et kort over applikationen.", r: "Flyt logs uden for webroden, og slå debug-logning fra."}
+  exposed_actuator:
+    cat: Exposure
+    sev: High
+    ease: 4
+    ref: "CWE-200"
+    en: {t: "Spring Boot actuator is not exposed ({path})", d: "Management endpoints are public.", x: "The env endpoint can leak configuration and credentials; others expose heap dumps.", r: "Restrict actuator endpoints to internal networks."}
+    da: {t: "Spring Boot actuator er ikke eksponeret ({path})", d: "Administrationsendepunkter er offentlige.", x: "Endpointet env kan lække konfiguration og adgangskoder; andre udstiller heap dumps.", r: "Begræns actuator-endpoints til interne netværk."}
+  admin_panel:
+    cat: Exposure
+    sev: Low
+    ease: 3
+    ref: "OWASP A05:2021"
+    en: {t: "Administration interface reachable ({path})", d: "A login or administration page is reachable from the internet.", x: "Attackers find it by guessing common paths and then try password guessing or credential stuffing with leaked passwords. Database tools such as phpMyAdmin are especially attractive targets.", r: "Restrict the interface by IP or VPN, enable two-factor authentication and rate limiting."}
+    da: {t: "Administrationsgrænseflade kan nås ({path})", d: "En login- eller administrationsside kan nås fra internettet.", x: "Angribere finder den ved at gætte almindelige stier og prøver derefter at gætte adgangskoder eller bruge lækkede adgangskoder. Databaseværktøjer som phpMyAdmin er særligt attraktive mål.", r: "Begræns grænsefladen via IP eller VPN, og aktivér totrinsgodkendelse og begrænsning af loginforsøg."}
+  api_docs:
+    cat: Exposure
+    sev: Low
+    ease: 3
+    ref: "OWASP API9:2023"
+    en: {t: "API documentation is not public ({path})", d: "Swagger/OpenAPI documentation is reachable.", x: "It hands an attacker a complete map of all endpoints and parameters, including internal ones.", r: "Restrict the documentation to authenticated or internal users."}
+    da: {t: "API-dokumentation er ikke offentlig ({path})", d: "Swagger/OpenAPI-dokumentation kan nås.", x: "Den giver en angriber et komplet kort over alle endpoints og parametre, også interne.", r: "Begræns dokumentationen til loggede ind eller interne brugere."}
+  dir_listing:
+    cat: Exposure
+    sev: Medium
+    ease: 5
+    ref: "CWE-548"
+    en: {t: "Directory listing is disabled ({path})", d: "The web server lists the files in a folder.", x: "An attacker browses the folder and finds files that were never meant to be public: backups, exports, uploads with personal data.", r: "Disable directory indexes (nginx: autoindex off; Apache: Options -Indexes)."}
+    da: {t: "Directory listing er slået fra ({path})", d: "Webserveren viser filerne i en mappe.", x: "En angriber gennemser mappen og finder filer, der aldrig var tænkt offentlige: backups, eksporter, uploads med persondata.", r: "Slå mappeindeks fra (nginx: autoindex off; Apache: Options -Indexes)."}
+  robots_paths:
+    cat: Exposure
+    sev: Info
+    en: {t: "robots.txt lists non-public paths", d: "Disallowed paths are a hint list for attackers.", x: "", r: "Do not rely on robots.txt to hide sensitive paths; protect them with authentication."}
+    da: {t: "robots.txt nævner ikke-offentlige stier", d: "Forbudte stier er en tipsliste til angribere.", x: "", r: "Stol ikke på robots.txt til at skjule følsomme stier; beskyt dem med login."}
+  methods_trace:
+    cat: Exposure
+    sev: Medium
+    ease: 2
+    ref: "CWE-693"
+    en: {t: "HTTP TRACE is disabled", d: "TRACE echoes the request back to the client.", x: "Combined with another flaw, TRACE can expose headers such as cookies or credentials to scripts (cross-site tracing).", r: "Disable TRACE (nginx: default; Apache: TraceEnable off)."}
+    da: {t: "HTTP TRACE er slået fra", d: "TRACE sender forespørgslen tilbage til klienten.", x: "Kombineret med en anden fejl kan TRACE afsløre headere som cookies eller loginoplysninger for scripts (cross-site tracing).", r: "Slå TRACE fra (Apache: TraceEnable off)."}
+  methods_risky:
+    cat: Exposure
+    sev: Low
+    ease: 2
+    ref: "CWE-650"
+    en: {t: "No risky HTTP methods advertised ({methods})", d: "The server advertises methods such as PUT or DELETE.", x: "If these methods are actually enabled, an attacker can upload or delete files. The advertised list is not proof, so verify.", r: "Allow only GET, HEAD and POST unless the application needs more."}
+    da: {t: "Ingen risikable HTTP-metoder annonceres ({methods})", d: "Serveren annoncerer metoder som PUT eller DELETE.", x: "Hvis metoderne reelt er aktive, kan en angriber uploade eller slette filer. Listen er ikke bevis, så verificér.", r: "Tillad kun GET, HEAD og POST, medmindre applikationen kræver mere."}
+  cors_misconfig:
+    cat: Exposure
+    sev: High
+    ease: 3
+    ref: "CWE-942"
+    en: {t: "CORS does not trust arbitrary origins", d: "The server reflects or wildcards the Origin header.", x: "A malicious site visited by a logged-in user can read responses from your site with the user's cookies and steal private data.", r: "Allow only an explicit list of trusted origins and never combine reflection with credentials."}
+    da: {t: "CORS stoler ikke på vilkårlige origins", d: "Serveren spejler eller wildcarder Origin-headeren.", x: "En ondsindet side besøgt af en logget-ind bruger kan læse svar fra din side med brugerens cookies og stjæle private data.", r: "Tillad kun en eksplicit liste af betroede origins, og kombinér aldrig spejling med credentials."}
+  mixed_content:
+    cat: WebApp
+    sev: Medium
+    ease: 3
+    ref: "OWASP A02:2021"
+    en: {t: "No mixed content on HTTPS pages", d: "HTTPS pages load resources over plain HTTP.", x: "An attacker on the network replaces the insecure script or image with their own and gains control of the page.", r: "Load all resources over HTTPS."}
+    da: {t: "Ingen blandet indhold på HTTPS-sider", d: "HTTPS-sider indlæser ressourcer over ukrypteret HTTP.", x: "En angriber på netværket erstatter det usikre script eller billede med sit eget og overtager siden.", r: "Indlæs alle ressourcer over HTTPS."}
+  form_http:
+    cat: WebApp
+    sev: High
+    ease: 4
+    ref: "OWASP A02:2021"
+    en: {t: "Forms are submitted over HTTPS", d: "A form sends data over plain HTTP.", x: "Everything the user types, including passwords, is visible to anyone on the network path.", r: "Submit all forms to https:// addresses."}
+    da: {t: "Formularer sendes over HTTPS", d: "En formular sender data over ukrypteret HTTP.", x: "Alt brugeren taster, inkl. adgangskoder, kan ses af alle på netværksvejen.", r: "Send alle formularer til https://-adresser."}
+  form_csrf:
+    cat: WebApp
+    sev: Low
+    ease: 3
+    ref: "CWE-352"
+    en: {t: "POST forms contain an anti-CSRF token", d: "No token-like hidden field was found in the form.", x: "An attacker's page makes the victim's browser submit the form to your site while logged in (CSRF), changing data or settings in the victim's name. This is a heuristic and needs manual verification.", r: "Add per-session anti-CSRF tokens and SameSite cookies."}
+    da: {t: "POST-formularer indeholder et anti-CSRF-token", d: "Intet token-lignende skjult felt blev fundet i formularen.", x: "En angribers side får offerets browser til at sende formularen til din side, mens offeret er logget ind (CSRF), og ændrer data eller indstillinger i offerets navn. Dette er en heuristik og skal verificeres manuelt.", r: "Tilføj anti-CSRF-tokens pr. session og SameSite-cookies."}
+  sri_missing:
+    cat: WebApp
+    sev: Low
+    ease: 2
+    ref: "https://developer.mozilla.org/docs/Web/Security/Subresource_Integrity"
+    en: {t: "Third-party scripts use Subresource Integrity", d: "External scripts are loaded without an integrity hash.", x: "If the third party is hacked, the attacker's modified script runs on every page of your site and can steal logins and payment data.", r: "Add integrity and crossorigin attributes, or host the files yourself."}
+    da: {t: "Tredjepartsscripts bruger Subresource Integrity", d: "Eksterne scripts indlæses uden integritets-hash.", x: "Bliver tredjeparten hacket, kører angriberens ændrede script på alle sider hos dig og kan stjæle logins og betalingsdata.", r: "Tilføj integrity og crossorigin, eller host filerne selv."}
+  third_party_scripts:
+    cat: WebApp
+    sev: Info
+    en: {t: "Third-party script hosts", d: "External hosts that load code into the pages.", x: "", r: "Review that each third party is needed and trusted."}
+    da: {t: "Tredjeparts-scripthosts", d: "Eksterne værter, der indlæser kode på siderne.", x: "", r: "Kontrollér at hver tredjepart er nødvendig og betroet."}
+  tracking_consent:
+    cat: WebApp
+    sev: Info
+    en: {t: "Trackers found in page source", d: "Known tracking services are referenced in the page HTML. Whether they load before consent must be verified manually.", x: "", r: "Make sure tracking scripts load only after consent (GDPR / ePrivacy)."}
+    da: {t: "Trackere fundet i sidens kildekode", d: "Kendte sporingstjenester er nævnt i sidens HTML. Om de indlæses før samtykke skal verificeres manuelt.", x: "", r: "Sørg for at sporingsscripts først indlæses efter samtykke (GDPR / ePrivacy)."}
+  param_reflected:
+    cat: WebApp
+    sev: Low
+    ease: 3
+    ref: "CWE-79"
+    en: {t: "Request parameters are not reflected in the page ({param})", d: "A harmless test value sent in a parameter appeared in the response.", x: "Reflected input is where cross-site scripting usually occurs: an attacker sends a victim a crafted link, and script in the link runs in the victim's browser on your site. This is only an indicator and needs manual verification.", r: "Encode all output according to context and add a CSP."}
+    da: {t: "Forespørgselsparametre spejles ikke i siden ({param})", d: "En harmløs testværdi sendt i en parameter dukkede op i svaret.", x: "Spejlet input er der, hvor cross-site scripting typisk opstår: en angriber sender offeret et konstrueret link, og script i linket kører i offerets browser på din side. Dette er kun en indikator og skal verificeres manuelt.", r: "Kod alt output efter kontekst, og tilføj en CSP."}
+  open_redirect_param:
+    cat: WebApp
+    sev: Info
+    en: {t: "Links with redirect-style parameters", d: "Parameters like url= or redirect= are sometimes abusable as open redirects.", x: "", r: "Allow only relative or allow-listed redirect targets."}
+    da: {t: "Links med redirect-lignende parametre", d: "Parametre som url= eller redirect= kan undertiden misbruges som open redirect.", x: "", r: "Tillad kun relative eller godkendte omdirigeringsmål."}
+  wp_xmlrpc:
+    cat: WebApp
+    sev: Low
+    ease: 4
+    ref: "WordPress hardening"
+    en: {t: "WordPress XML-RPC is disabled", d: "xmlrpc.php answers requests.", x: "XML-RPC lets attackers test hundreds of passwords in a single request and bypasses many login protections.", r: "Disable xmlrpc.php unless needed."}
+    da: {t: "WordPress XML-RPC er slået fra", d: "xmlrpc.php svarer på forespørgsler.", x: "XML-RPC lader angribere prøve hundredvis af adgangskoder i ét kald og omgår mange login-beskyttelser.", r: "Slå xmlrpc.php fra, medmindre den bruges."}
+  wp_user_enum:
+    cat: WebApp
+    sev: Medium
+    ease: 5
+    ref: "WordPress hardening"
+    en: {t: "WordPress user names are not enumerable", d: "The REST API lists user accounts.", x: "Knowing the real login names halves the work of a password-guessing attack on wp-login.php.", r: "Restrict the users REST endpoint and use unique, non-obvious login names."}
+    da: {t: "WordPress-brugernavne kan ikke opregnes", d: "REST-API'et viser brugerkonti.", x: "Når de rigtige loginnavne er kendt, halveres arbejdet med at gætte adgangskoder mod wp-login.php.", r: "Begræns users-endpointet i REST, og brug unikke login-navne, der ikke er nemme at gætte."}
+  wp_plugins:
+    cat: Technology
+    sev: Info
+    en: {t: "WordPress plugins detected", d: "Plugins are the most common entry point for WordPress compromises. Check each version against a vulnerability database such as WPScan.", x: "", r: "Keep plugins updated and remove unused ones."}
+    da: {t: "WordPress-plugins fundet", d: "Plugins er den hyppigste indgang til hackede WordPress-sider. Kontrollér hver version mod en sårbarhedsdatabase som WPScan.", x: "", r: "Hold plugins opdaterede, og fjern ubrugte."}
+  error_disclosure:
+    cat: Exposure
+    sev: Medium
+    ease: 3
+    ref: "CWE-209"
+    en: {t: "No stack traces or debug output in responses", d: "Error messages reveal internal details.", x: "Stack traces expose file paths, framework versions and sometimes SQL queries or secrets, which guide a targeted attack.", r: "Disable debug mode and show generic error pages in production."}
+    da: {t: "Ingen stack traces eller debug-output i svar", d: "Fejlbeskeder afslører interne detaljer.", x: "Stack traces afslører filstier, frameworkversioner og undertiden SQL eller hemmeligheder, som styrer et målrettet angreb.", r: "Slå debug-tilstand fra, og vis generiske fejlsider i produktion."}
+  cve_none:
+    cat: Vulnerabilities
+    sev: Info
+    en: {t: "No known CVEs found for {product} {version}", d: "The detected version was checked against the NVD database. This does not prove the software is safe: the version was read from outside.", x: "", r: ""}
+    da: {t: "Ingen kendte CVE'er fundet for {product} {version}", d: "Den fundne version blev kontrolleret mod NVD-databasen. Det beviser ikke, at softwaren er sikker: versionen er aflæst udefra.", x: "", r: ""}
+
+# Attack stories: shown in the report when the listed findings fail. 'requires' = all must fail, 'any' = at least one must fail.
+chains:
+  - id: session_hijack
+    requires: [cookie_flags]
+    any: [hsts_present, http_redirect, https_available]
+    en: {t: "Session hijacking on public Wi-Fi", s: "An attacker sits in the same cafe or hotel network as one of your users. Because HTTPS is not enforced strictly and the session cookie lacks the Secure flag, the attacker's device captures the cookie the first time the browser makes a plain HTTP request. With that cookie the attacker is logged in as the victim, without ever knowing the password."}
+    da: {t: "Overtagelse af session på offentligt wifi", s: "En angriber sidder på samme café- eller hotelnetværk som en af dine brugere. Fordi HTTPS ikke håndhæves strengt, og session-cookien mangler Secure-flaget, opsnapper angriberens enhed cookien første gang browseren laver en ukrypteret HTTP-forespørgsel. Med cookien er angriberen logget ind som offeret, uden nogensinde at kende adgangskoden."}
+  - id: xss_takeover
+    requires: [csp_present]
+    any: [js_vulnerable, param_reflected, sri_missing]
+    en: {t: "Cross-site scripting leading to account takeover", s: "The page has no Content-Security-Policy and either reflects input, uses a vulnerable library or loads unverified third-party code. The attacker sends a crafted link or compromises the third party; the injected script runs in the victim's browser inside your site and silently steals the session or captures typed passwords."}
+    da: {t: "Cross-site scripting der fører til overtagelse af konti", s: "Siden har ingen Content-Security-Policy og spejler enten input, bruger et sårbart bibliotek eller indlæser ukontrolleret tredjepartskode. Angriberen sender et konstrueret link eller kompromitterer tredjeparten; det indsatte script kører i offerets browser inde på din side og stjæler stille sessionen eller opsnapper indtastede adgangskoder."}
+  - id: clickjacking
+    requires: [frame_protection]
+    any: [cookie_flags, form_csrf]
+    en: {t: "Clickjacking against logged-in users", s: "Without frame protection the attacker embeds your site invisibly in a decoy page (a prize game, a video). A logged-in user clicks what looks like a harmless button, but really presses a button on your site, such as confirming a transfer or changing settings."}
+    da: {t: "Clickjacking mod loggede-ind brugere", s: "Uden rammebeskyttelse indlejrer angriberen din side usynligt i en lokkeside (et gevinstspil, en video). En logget-ind bruger klikker på det, der ligner en harmløs knap, men trykker i virkeligheden på en knap hos dig, fx bekræfter en overførsel eller ændrer indstillinger."}
+  - id: source_leak
+    requires: []
+    any: [exposed_git, exposed_env, exposed_backup, exposed_config, exposed_htpasswd, exposed_vcs, exposed_debuglog]
+    en: {t: "Leaked secrets lead to full compromise", s: "An automated scanner on the internet requests well-known file names within hours of a site going online. When it finds the exposed file it downloads source code or credentials. The attacker logs in to the database, mail account or admin panel with the leaked passwords, and has the same access as you do, with no hacking skills required."}
+    da: {t: "Lækkede hemmeligheder giver fuld overtagelse", s: "En automatisk scanner på internettet beder om kendte filnavne få timer efter, en side er kommet online. Når den finder den eksponerede fil, henter den kildekode eller adgangskoder. Angriberen logger ind i databasen, mailkontoen eller adminpanelet med de lækkede adgangskoder og har samme adgang som dig, uden at skulle kunne hacke."}
+  - id: outdated_stack
+    requires: [cve]
+    any: [version_disclosure, tech_detected]
+    en: {t: "Known exploit against an outdated component", s: "The attacker reads the software version from the response headers or page source, searches a public vulnerability database and finds a published exploit for exactly that version. They run it against the server, which can end in remote code execution and a full takeover of the web server."}
+    da: {t: "Kendt exploit mod en forældet komponent", s: "Angriberen aflæser softwareversionen i svar-headere eller sidens kildekode, søger i en offentlig sårbarhedsdatabase og finder en publiceret exploit til netop den version. Den køres mod serveren, hvilket kan ende i fjernudførelse af kode og fuld overtagelse af webserveren."}
+  - id: dns_spoof
+    requires: [dnssec_signed]
+    any: []
+    en: {t: "DNS forgery redirects visitors", s: "Without DNSSEC an attacker who can poison a resolver cache or controls a network sends visitors to a fake server for your domain. Without a CAA record the attacker may also pass automatic domain validation and get a valid certificate, making the fake site look genuine with a padlock."}
+    da: {t: "DNS-forfalskning omdirigerer besøgende", s: "Uden DNSSEC kan en angriber, der kan forgifte en resolvers cache eller styrer et netværk, sende besøgende til en falsk server for dit domæne. Uden CAA-record kan angriberen desuden bestå automatisk domænevalidering og få et gyldigt certifikat, så den falske side ser ægte ud med hængelås."}
+  - id: mail_spoof
+    requires: []
+    any: [spf, dmarc]
+    en: {t: "Phishing mails in your name", s: "Because SPF or DMARC is missing or weak, the attacker sends mail that shows your domain as the sender. Customers and employees receive invoices or password reset requests that look genuine, and either pay the wrong account or hand over credentials."}
+    da: {t: "Phishing-mails i dit navn", s: "Fordi SPF eller DMARC mangler eller er svag, sender angriberen mail, der viser dit domæne som afsender. Kunder og medarbejdere modtager fakturaer eller nulstilling af adgangskode, der ser ægte ud, og betaler til den forkerte konto eller afleverer loginoplysninger."}
+  - id: wp_bruteforce
+    requires: [wp_user_enum]
+    any: [wp_xmlrpc, admin_panel]
+    en: {t: "Password guessing against WordPress", s: "The attacker reads the real login names from the public REST API, then tries thousands of common and leaked passwords through the login page or xmlrpc.php. One weak password gives admin access, and from there the attacker uploads a malicious plugin and controls the server."}
+    da: {t: "Gætning af adgangskoder mod WordPress", s: "Angriberen læser de rigtige loginnavne fra det offentlige REST-API og prøver derefter tusindvis af almindelige og lækkede adgangskoder via loginsiden eller xmlrpc.php. Én svag adgangskode giver administratoradgang, og derfra uploader angriberen et ondsindet plugin og styrer serveren."}
+  - id: tls_downgrade
+    requires: []
+    any: [tls_legacy_disabled, cipher_insecure, cipher_no_pfs, cert_trusted]
+    en: {t: "Eavesdropping through weak TLS", s: "The server accepts old protocol versions or weak ciphers, or users are used to certificate warnings. An attacker in the network path forces a weak connection or presents a self-made certificate, then reads or changes everything users send, including passwords."}
+    da: {t: "Aflytning via svag TLS", s: "Serveren accepterer gamle protokolversioner eller svage ciphers, eller brugerne er vant til certifikatadvarsler. En angriber på netværksvejen tvinger en svag forbindelse eller viser et selvlavet certifikat og læser eller ændrer alt, brugerne sender, inkl. adgangskoder."}
+  - id: takeover_story
+    requires: []
+    any: [takeover, dangling_cname]
+    en: {t: "Subdomain takeover used for phishing", s: "A forgotten DNS record points at a cloud service resource that no longer exists. The attacker claims it and now serves content on a subdomain of your real domain, which is trusted by browsers and users. It is used for convincing phishing pages and to capture cookies scoped to your domain."}
+    da: {t: "Overtagelse af underdomæne brugt til phishing", s: "En glemt DNS-record peger på en skyressource, der ikke længere findes. Angriberen registrerer den og leverer nu indhold på et underdomæne til dit rigtige domæne, som browsere og brugere stoler på. Det bruges til overbevisende phishing-sider og til at opsnappe cookies, der gælder for dit domæne."}

@@ -1,0 +1,75 @@
+# Title shown when a test FAILS (the main title in findings.yaml names the test / the passing state).
+http_redirect: {en: "HTTP does not redirect to HTTPS", da: "HTTP sender ikke videre til HTTPS"}
+https_available: {en: "Site is not served over HTTPS", da: "Siden leveres ikke via HTTPS"}
+hsts_present: {en: "HSTS header is missing", da: "HSTS-header mangler"}
+hsts_maxage: {en: "HSTS max-age is too short", da: "HSTS max-age er for kort"}
+hsts_subdomains: {en: "HSTS does not cover subdomains", da: "HSTS dækker ikke underdomæner"}
+hsts_preload: {en: "HSTS preload is not enabled", da: "HSTS preload er ikke aktiveret"}
+csp_present: {en: "Content-Security-Policy is missing", da: "Content-Security-Policy mangler"}
+csp_weak: {en: "CSP allows unsafe-inline or unsafe-eval", da: "CSP tillader unsafe-inline eller unsafe-eval"}
+frame_protection: {en: "No clickjacking protection", da: "Ingen beskyttelse mod clickjacking"}
+nosniff: {en: "X-Content-Type-Options header is missing", da: "X-Content-Type-Options mangler"}
+referrer_policy: {en: "Referrer-Policy is missing", da: "Referrer-Policy mangler"}
+permissions_policy: {en: "Permissions-Policy is missing", da: "Permissions-Policy mangler"}
+security_txt: {en: "No security.txt published", da: "Ingen security.txt publiceret"}
+version_disclosure: {en: "Server reveals its version in the {header} header", da: "Serveren afslører sin version i headeren {header}"}
+cookie_flags: {en: "Cookie '{name}' lacks security flags", da: "Cookie '{name}' mangler sikkerhedsflag"}
+tls_no_connection: {en: "No TLS connection could be established", da: "TLS-forbindelse kunne ikke oprettes"}
+tls_legacy_disabled: {en: "Obsolete TLS 1.0/1.1 is enabled", da: "Forældet TLS 1.0/1.1 er aktiveret"}
+tls12_supported: {en: "TLS 1.2 is not supported", da: "TLS 1.2 understøttes ikke"}
+tls13_supported: {en: "TLS 1.3 is not supported", da: "TLS 1.3 understøttes ikke"}
+tls_compression: {en: "TLS compression is enabled (CRIME)", da: "TLS-kompression er aktiveret (CRIME)"}
+cipher_insecure: {en: "Insecure cipher suites are accepted", da: "Usikre cipher suites accepteres"}
+cipher_no_pfs: {en: "Cipher suites without forward secrecy are accepted", da: "Cipher suites uden forward secrecy accepteres"}
+cipher_cbc: {en: "CBC cipher suites are accepted", da: "CBC-cipher suites accepteres"}
+cert_trusted: {en: "Certificate is not trusted or does not match the hostname", da: "Certifikatet er ikke betroet eller matcher ikke værtsnavnet"}
+cert_expiry: {en: "Certificate expires soon or has expired", da: "Certifikatet udløber snart eller er udløbet"}
+cert_key: {en: "Certificate key is weak", da: "Certifikatets nøgle er svag"}
+cert_sig: {en: "Certificate uses a weak signature hash", da: "Certifikatet bruger en svag signatur-hash"}
+cert_sct: {en: "Certificate has no Certificate Transparency SCTs", da: "Certifikatet har ingen Certificate Transparency (SCT)"}
+tls_reneg: {en: "Secure renegotiation is not supported", da: "Sikker renegotiation understøttes ikke"}
+ocsp_stapling: {en: "OCSP stapling is not enabled", da: "OCSP stapling er ikke aktiveret"}
+dnssec_signed: {en: "Domain is not DNSSEC-signed", da: "Domænet er ikke DNSSEC-signeret"}
+dnssec_valid: {en: "DNSSEC signatures are invalid", da: "DNSSEC-signaturer er ugyldige"}
+dnssec_algo: {en: "Weak DNSSEC algorithm", da: "Svag DNSSEC-algoritme"}
+dnssec_expiry: {en: "DNSSEC signatures are about to expire", da: "DNSSEC-signaturer er ved at udløbe"}
+dane_validated: {en: "TLSA records are not DNSSEC-validated", da: "TLSA-records er ikke DNSSEC-valideret"}
+dane_match: {en: "TLSA record does not match the certificate", da: "TLSA-recorden matcher ikke certifikatet"}
+ipv6_web: {en: "Web server has no IPv6 address", da: "Webserveren har ingen IPv6-adresse"}
+ipv6_ns: {en: "Not all name servers have IPv6", da: "Ikke alle navneservere har IPv6"}
+ipv6_reach: {en: "Web server is not reachable over IPv6", da: "Webserveren kan ikke nås over IPv6"}
+caa: {en: "No CAA record", da: "Ingen CAA-record"}
+dangling_cname: {en: "Dangling CNAME on {host}", da: "Hængende CNAME på {host}"}
+takeover: {en: "Subdomain {host} can be taken over ({service})", da: "Underdomænet {host} kan overtages ({service})"}
+spf: {en: "SPF is missing or too permissive", da: "SPF mangler eller er for lempelig"}
+dmarc: {en: "DMARC is missing or not enforced", da: "DMARC mangler eller håndhæves ikke"}
+mta_sts: {en: "MTA-STS is not enforced", da: "MTA-STS er ikke i enforce-tilstand"}
+tls_rpt: {en: "TLS-RPT is not configured", da: "TLS-RPT er ikke sat op"}
+mail_dane: {en: "No DANE for mail server {host}", da: "Ingen DANE for mailserver {host}"}
+mail_starttls: {en: "Mail server {host} does not offer STARTTLS", da: "Mailserveren {host} tilbyder ikke STARTTLS"}
+dkim: {en: "No DKIM key found", da: "Ingen DKIM-nøgle fundet"}
+exposed_git: {en: "Git repository is exposed", da: "Git-repository er eksponeret"}
+exposed_env: {en: ".env file with secrets is exposed", da: ".env-filen med hemmeligheder er eksponeret"}
+exposed_backup: {en: "Backup or database dump is exposed ({path})", da: "Backup eller databasedump er eksponeret ({path})"}
+exposed_phpinfo: {en: "phpinfo page is exposed ({path})", da: "phpinfo-siden er eksponeret ({path})"}
+exposed_serverstatus: {en: "Server status page is exposed ({path})", da: "Serverstatus-siden er eksponeret ({path})"}
+exposed_dsstore: {en: ".DS_Store file is exposed", da: ".DS_Store-filen er eksponeret"}
+exposed_htpasswd: {en: ".htpasswd file is exposed", da: ".htpasswd-filen er eksponeret"}
+exposed_config: {en: "Configuration file is exposed ({path})", da: "Konfigurationsfil er eksponeret ({path})"}
+exposed_vcs: {en: "Version-control metadata is exposed ({path})", da: "Versionsstyrings-metadata er eksponeret ({path})"}
+exposed_debuglog: {en: "Debug or error log is exposed ({path})", da: "Debug- eller fejllog er eksponeret ({path})"}
+exposed_actuator: {en: "Spring Boot actuator is exposed ({path})", da: "Spring Boot actuator er eksponeret ({path})"}
+admin_panel: {en: "Administration interface is reachable ({path})", da: "Administrationsgrænseflade kan nås ({path})"}
+api_docs: {en: "API documentation is public ({path})", da: "API-dokumentation er offentlig ({path})"}
+dir_listing: {en: "Directory listing is enabled ({path})", da: "Directory listing er slået til ({path})"}
+methods_trace: {en: "HTTP TRACE is enabled", da: "HTTP TRACE er aktiveret"}
+methods_risky: {en: "Risky HTTP methods are advertised ({methods})", da: "Risikable HTTP-metoder annonceres ({methods})"}
+cors_misconfig: {en: "CORS trusts arbitrary origins", da: "CORS stoler på vilkårlige origins"}
+mixed_content: {en: "Mixed content on HTTPS pages", da: "Blandet indhold på HTTPS-sider"}
+form_http: {en: "Form submits data over HTTP", da: "Formular sender data over HTTP"}
+form_csrf: {en: "POST form without a visible anti-CSRF token", da: "POST-formular uden synligt anti-CSRF-token"}
+sri_missing: {en: "Third-party scripts without Subresource Integrity", da: "Tredjepartsscripts uden Subresource Integrity"}
+param_reflected: {en: "Request parameter is reflected in the page ({param})", da: "Forespørgselsparameter spejles i siden ({param})"}
+wp_xmlrpc: {en: "WordPress XML-RPC is enabled", da: "WordPress XML-RPC er aktiveret"}
+wp_user_enum: {en: "WordPress user names can be enumerated", da: "WordPress-brugernavne kan opregnes"}
+error_disclosure: {en: "Error messages reveal internal details", da: "Fejlbeskeder afslører interne detaljer"}

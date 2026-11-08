@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SecAuditTool</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--card:#f4f4f6;--bd:#d8d8de;--ac:#2563eb}
+@media (prefers-color-scheme:dark){:root{--bg:#14161a;--fg:#e6e6e6;--card:#1e2127;--bd:#333842;--ac:#5b8def}}
+*{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--fg);max-width:1040px;margin:0 auto;padding:1rem}
+input[type=text],input[type=date],textarea,select{padding:.45rem;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;width:100%}
+button{padding:.45rem .9rem;background:var(--ac);color:#fff;border:0;border-radius:6px;cursor:pointer}button.sec{background:var(--card);color:var(--fg);border:1px solid var(--bd)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}.grid .w{grid-column:1/3}label.f{font-size:.85rem;color:#888;display:block}
+pre{background:var(--card);padding:.6rem;border-radius:6px;white-space:pre-wrap;max-height:200px;overflow:auto;font-size:.8rem}
+details{background:var(--card);border:1px solid var(--bd);border-radius:6px;margin:.35rem 0;padding:.45rem .8rem}summary{cursor:pointer;font-weight:600}
+.sev{display:inline-block;min-width:4.5rem;text-align:center;border-radius:4px;color:#fff;font-size:.78rem;padding:1px 6px;margin-right:.5rem}
+.Critical{background:#7f1d1d}.High{background:#dc2626}.Medium{background:#d97706}.Low{background:#2563eb}.Info{background:#6b7280}.Pass{background:#16a34a}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid var(--bd);padding:.3rem .6rem;text-align:left;font-size:.9rem}
+h4{margin:.7rem 0 .2rem}.story{border-left:4px solid #dc2626;background:rgba(220,38,38,.1);padding:.5rem .9rem;margin:.5rem 0}
+.grade{font-size:3.5rem;font-weight:700;line-height:1;margin-right:1rem}.row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+section{margin:1.2rem 0}.hide{display:none}.small{font-size:.8rem;color:#888}
+</style></head><body>
+<div class="row"><h1 style="flex:1">SecAuditTool</h1>
+<label class="small">Sprog / Language <select id="lang" style="width:auto"><option value="da">Dansk</option><option value="en">English</option></select></label></div>
+
+<section id="new"><h3>Ny scanning</h3>
+<div class="grid">
+<div class="w"><label class="f">Mål (domæne eller URL)</label><input type="text" id="t" placeholder="example.com"></div>
+<div><label class="f">Kunde</label><input type="text" id="customer" list="custlist"><datalist id="custlist"></datalist></div>
+<div><label class="f">Profil</label><select id="profile"><option value="quick">Quick – forside, ingen sti-test</option><option value="standard" selected>Standard – 15 sider, almindelige filer</option><option value="thorough">Thorough – 30 sider, udvidet, DKIM</option></select></div>
+<div><label class="f">Tilladelse givet af (påkrævet)</label><input type="text" id="auth_by" placeholder="Navn / 'egen side'"></div>
+<div><label class="f">Dato for tilladelse</label><input type="date" id="auth_date"></div>
+<div><label class="f">Reference (kontrakt, mail, sagsnr.)</label><input type="text" id="auth_ref"></div>
+<div><label class="f">Afgrænsning</label><input type="text" id="scope_note" placeholder="fx 'kun www.kunde.dk, ingen test af login'"></div>
+</div>
+<p><label><input type="checkbox" id="auth"> Jeg ejer målet eller har skriftlig tilladelse til at teste det</label></p>
+<p><button id="go">Start scanning</button> <span id="msg" style="color:#dc2626"></span></p></section>
+
+<section id="run" class="hide"><div class="row"><h3 style="flex:1">Scanning <span id="rid"></span> <span id="rstatus" class="small"></span></h3><button class="sec" id="cancel">Annullér</button></div><pre id="log">-</pre></section>
+
+<section id="res" class="hide">
+<div class="row"><div class="grade" id="grade"></div><div style="flex:1"><div id="rtitle" style="font-size:1.2rem;font-weight:600"></div><div class="small" id="rmeta"></div></div></div>
+<div class="row" style="margin:.6rem 0"><span class="small">Rapport:</span>
+<button class="sec" onclick="exp('html')">HTML / PDF</button><button class="sec" onclick="exp('md')">Markdown</button><button class="sec" onclick="exp('json')">JSON</button>
+<label class="small">Før/efter mod <select id="cmp" style="width:auto"><option value="">(ingen)</option></select></label></div>
+<div id="score"></div><div id="chains"></div>
+<div class="row"><label class="small"><input type="checkbox" id="showpass"> vis beståede tests</label>
+<label class="small">Min. alvor <select id="minsev" style="width:auto"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></label>
+<input type="text" id="q" placeholder="Søg i fund" style="width:220px"></div>
+<div id="out"></div></section>
+
+<section id="diff" class="hide"></section>
+
+<section><h3>Historik</h3><div class="row"><input type="text" id="hfilter" placeholder="Filtrér på kunde eller mål" style="width:280px"></div>
+<table><thead><tr><th>#</th><th>Kunde</th><th>Mål</th><th>Dato</th><th>Profil</th><th>Status</th><th>Karakter</th><th></th></tr></thead><tbody id="hist"></tbody></table></section>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SEV=['Critical','High','Medium','Low','Info','Pass'];
+let timer,cur=null,history=[];
+const lang=()=>$('lang').value;
+$('lang').onchange=()=>{cur&&show(cur.scan.id);loadHistory()};
+
+$('go').onclick=async()=>{
+  $('msg').textContent='';clearInterval(timer);
+  const body={target:$('t').value,authorized:$('auth').checked,customer:$('customer').value,auth_by:$('auth_by').value,
+    auth_date:$('auth_date').value,auth_ref:$('auth_ref').value,scope_note:$('scope_note').value,profile:$('profile').value};
+  const r=await fetch('/api/scans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){$('msg').textContent=typeof d.detail==='string'?d.detail:JSON.stringify(d.detail);return}
+  $('run').classList.remove('hide');$('res').classList.add('hide');$('diff').classList.add('hide');$('rid').textContent='#'+d.id;
+  $('cancel').onclick=()=>fetch('/api/scans/'+d.id+'/cancel',{method:'POST'});
+  timer=setInterval(()=>poll(d.id),1200);poll(d.id);
+};
+async function poll(id){
+  const d=await (await fetch('/api/scans/'+id+'?lang='+lang())).json();
+  $('log').textContent=d.scan.log||'-';$('log').scrollTop=1e9;$('rstatus').textContent='('+d.scan.status+')';
+  if(['completed','failed','cancelled'].includes(d.scan.status)){clearInterval(timer);loadHistory();render(d)}
+}
+async function show(id){
+  const d=await (await fetch('/api/scans/'+id+'?lang='+lang())).json();
+  render(d);window.scrollTo(0,0);
+}
+function render(d){
+  cur=d;const s=d.summary,sc=d.scan;
+  $('res').classList.remove('hide');
+  $('grade').textContent=s.grade;$('grade').style.color=['A','B'].includes(s.grade)?'#16a34a':s.grade==='C'?'#ca8a04':'#dc2626';
+  $('rtitle').textContent=(sc.customer?sc.customer+' – ':'')+sc.target;
+  $('rmeta').textContent=`#${sc.id} · ${sc.profile} · score ${s.score}/100 · ${s.passed} bestået / ${s.failed} fejlet · ${sc.status}`;
+  const rows=Object.entries(s.categories).sort().map(([k,c])=>`<tr><td>${esc(k)}</td><td>${c.pct}%</td><td>${c.passed} / ${c.failed}</td></tr>`).join('');
+  $('score').innerHTML=`<table><tr><th>Kategori</th><th>Score</th><th>Bestået / fejlet</th></tr>${rows}</table>`;
+  $('chains').innerHTML=d.chains.map(c=>`<div class="story"><b>${esc(c.title)}</b><br>${esc(c.story)}</div>`).join('');
+  const others=history.filter(h=>h.target===sc.target&&h.id<sc.id);
+  $('cmp').innerHTML='<option value="">(ingen)</option>'+others.map(h=>`<option value="${h.id}">#${h.id} ${esc((h.created_at||'').slice(0,10))} (${h.grade})</option>`).join('');
+  list();
+}
+function list(){
+  if(!cur)return;
+  const min=SEV.indexOf($('minsev').value),q=$('q').value.toLowerCase(),sp=$('showpass').checked;
+  const fs=cur.findings.filter(f=>{
+    const i=SEV.indexOf(f.severity);
+    if(f.severity==='Pass')return sp;
+    if(f.severity==='Info')return !q||true;
+    return i<=min;
+  }).filter(f=>!q||(f.title+f.evidence+f.description).toLowerCase().includes(q));
+  fs.sort((a,b)=>(a.bucket||9)-(b.bucket||9)||b.priority-a.priority||SEV.indexOf(a.severity)-SEV.indexOf(b.severity));
+  $('out').innerHTML=fs.map(f=>`<details><summary><span class="sev ${f.severity}">${f.severity}</span>[${esc(f.category)}] ${esc(f.title)}</summary>
+  <h4>Dokumentation</h4><pre>${esc(f.evidence)}</pre><h4>Beskrivelse</h4>${esc(f.description)}
+  ${f.exploitation?`<h4>Sådan kan det udnyttes</h4>${esc(f.exploitation)}`:''}
+  ${f.remediation?`<h4>Sådan retter du det</h4><pre>${esc(f.remediation)}</pre>`:''}
+  <div class="small">${esc(f.references)} · sikkerhed: ${esc(f.confidence)}</div></details>`).join('')||'<p>Ingen fund med de valgte filtre.</p>';
+}
+['showpass','minsev','q'].forEach(i=>$(i).oninput=list);
+function exp(fmt){
+  if(!cur)return;
+  const c=$('cmp').value;
+  window.open(`/api/scans/${cur.scan.id}/report.${fmt}?lang=${lang()}${c?'&compare='+c:''}`,'_blank');
+}
+async function loadHistory(){
+  history=await (await fetch('/api/scans')).json();
+  const cust=await (await fetch('/api/customers')).json();
+  $('custlist').innerHTML=cust.map(c=>`<option value="${esc(c)}">`).join('');
+  const f=$('hfilter').value.toLowerCase();
+  $('hist').innerHTML=history.filter(h=>!f||(h.customer+h.target).toLowerCase().includes(f)).map(h=>{
+    const prev=history.find(o=>o.target===h.target&&o.id<h.id);
+    return `<tr><td>${h.id}</td><td>${esc(h.customer)}</td><td>${esc(h.target)}</td><td>${esc((h.created_at||'').slice(0,16).replace('T',' '))}</td>
+    <td>${esc(h.profile)}</td><td>${esc(h.status)}</td><td><b>${h.grade}</b> (${h.score})</td>
+    <td><button class="sec" onclick="show(${h.id})">Åbn</button> <button class="sec" onclick="window.open('/api/scans/${h.id}/report.html?lang='+lang()+'${prev?'&compare='+prev.id:''}')">Rapport</button>
+    ${prev?`<button class="sec" onclick="diff(${prev.id},${h.id})">Før/efter</button>`:''}</td></tr>`}).join('');
+}
+$('hfilter').oninput=loadHistory;
+async function diff(a,b){
+  const d=await (await fetch(`/api/diff/${a}/${b}?lang=${lang()}`)).json();
+  const sec=(t,rows,cls)=>`<h4 style="color:${cls}">${t} (${rows.length})</h4>`+(rows.length?'<ul>'+rows.map(r=>`<li><span class="sev ${r.severity}">${r.severity}</span>${esc(r.title)}</li>`).join('')+'</ul>':'<p class="small">Ingen</p>');
+  $('diff').classList.remove('hide');
+  $('diff').innerHTML=`<h3>Før/efter: #${a} → #${b}</h3><p>Karakter ${d.before.grade} (${d.before.score}) → <b>${d.after.grade} (${d.after.score})</b></p>`
+    +sec('Løst',d.fixed,'#16a34a')+sec('Nye fund',d.new,'#dc2626')+sec('Stadig åbne',d.persistent,'#d97706');
+  $('diff').scrollIntoView();
+}
+loadHistory();
+</script></body></html>
